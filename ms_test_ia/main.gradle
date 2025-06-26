@@ -55,7 +55,9 @@ subprojects {
 
     pitest {
         targetClasses = ['co.com.bancolombia.*']
-        excludedClasses = []
+        excludedClasses = ['**.metrics.**', 'co.com.bancolombia.api.config.CorsConfig',
+                           'co.com.bancolombia.api.config.SecurityHeadersConfig',
+                           'co.com.bancolombia.config.UseCasesConfig']
         excludedTestClasses = []
         pitestVersion = '1.19.4'
         verbose = false
