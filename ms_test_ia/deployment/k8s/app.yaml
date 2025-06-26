@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: #{service}#
+  namespace: #{namespace}#
+  labels:
+    app.bancolombia.com.co/env: #{env}#
+    app.bancolombia.com.co/cost-center: #{cost-center}#
+    app.bancolombia.com.co/application-code: #{application-code}#
+    app.bancolombia.com.co/project: #{project-name}#
+    app.bancolombia.com.co/pmo: #{pmo}#
+spec:
+  selector:
+    pod: #{service}#-pod
+  ports:
+    - name: container-port
+      targetPort: #{app-port}#
+      port: #{container-port}#
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: #{service}#-deployment
+  namespace: #{namespace}#
+  labels:
+    app.bancolombia.com.co/env: #{env}#
+    app.bancolombia.com.co/cost-center: #{cost-center}#
+    app.bancolombia.com.co/application-code: #{application-code}#
+    app.bancolombia.com.co/project: #{project-name}#
+    app.bancolombia.com.co/pmo: #{pmo}#
+    app.bancolombia.com.co/responsible: #{responsible}#
+spec:
+  replicas: #{replicas}#
+  selector:
+    matchLabels:
+      pod: #{service}#-pod
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: #{max-surge}#
+      maxUnavailable: #{max-unavailable}#
+  template:
+    metadata:
+      labels:
+        app: #{project-name}#-#{service}#
+        pod: #{service}#-pod
+        app.bancolombia.com.co/project: #{project-name}#
+        version: #{version}#
+        version-strategy: stable
+      annotations:
+        fluentbit.io/exclude: "#{exclude-logs}#"
+    spec:
+      automountServiceAccountToken: false
+      serviceAccountName: #{service-account-name}#
+      terminationGracePeriodSeconds: #{termination-grace-period}#
+      securityContext:
+        runAsUser: #{jdk_uid}#
+        runAsGroup: #{jdk_gid}#
+        fsGroup: #{jdk_gid}#
+        runAsNonRoot: true
+      containers:
+        - name: #{service}#-container
+          image: #{image}#
+          resources:
+            requests:
+              memory: "#{memory-request}#Mi"
+              cpu: "#{cpu-request}#m"
+            limits:
+              memory: "#{memory-limits}#Mi"
+              cpu: "#{cpu-limits}#m"
+          ports:
+            - containerPort: #{app-port}#
+          envFrom:
+            - configMapRef:
+                name: #{service}#-configmap
+          startupProbe:
+            httpGet:
+              path: #{base-path}##{health-base-path}#
+              scheme: HTTP
+              port: #{app-port}#
+            periodSeconds: #{startup-probe-period-seconds}#
+            timeoutSeconds: #{startup-probe-timeout-seconds}#
+            successThreshold: #{startup-probe-success-threshold}#
+            failureThreshold: #{startup-probe-failure-threshold}#
+            initialDelaySeconds: #{startup-probe-initial-delay-seconds}#
+          livenessProbe:
+            httpGet:
+              path: #{liveness-probe-http-get-path}#
+              scheme: HTTP
+              port: #{app-port}#
+            periodSeconds: #{liveness-probe-period-seconds}#
+            timeoutSeconds: #{liveness-probe-timeout-seconds}#
+            successThreshold: #{liveness-probe-success-threshold}#
+            failureThreshold: #{liveness-probe-failure-threshold}#
+            initialDelaySeconds: #{liveness-probe-initial-delay-seconds}#
+          readinessProbe:
+            httpGet:
+              path: #{readiness-probe-http-get-path}#
+              scheme: HTTP
+              port: #{app-port}#
+            periodSeconds: #{readiness-probe-period-seconds}#
+            timeoutSeconds: #{readiness-probe-timeout-seconds}#
+            successThreshold: #{readiness-probe-success-threshold}#
+            failureThreshold: #{readiness-probe-failure-threshold}#
+            initialDelaySeconds: #{readiness-probe-initial-delay-seconds}#
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: #{jdk_uid}#
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+      topologySpreadConstraints:
+        - maxSkew: #{max-skew}#
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              pod: #{service}#-pod
+        - maxSkew: #{max-skew}#
+          topologyKey: kubernetes.io/timezone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              pod: #{service}#-pod
