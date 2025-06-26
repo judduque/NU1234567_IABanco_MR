@@ -12,7 +12,8 @@ public class StatusResponseMapper {
 
     private static final String SUCCESS_CODE = "200";
     private  static final String ERROR_CODE = "500";
-    private  static final String DEFAULT_ERROR_MESSAGE = "An error occurred while processing the request";
+    private  static final String ERROR_STATUS = "ERROR";
+    provate static final String DEFAULT_ERROR_MESSAGE = "An error occurred while processing the request";
 
 
     private static Response.SystemStatusRS toSystemStatusRS(SystemStatus infoSystem) {
@@ -42,11 +43,11 @@ public class StatusResponseMapper {
                 .build();
     }
 
-    public static Response buildResponseError(String message) {
+    public static Response buildResponseError() {
         return Response.builder()
                 .data(Response.SystemStatusRS.builder()
-                        .status(DEFAULT_ERROR_MESSAGE)
-                        .message(message)
+                        .status(ERROR_STATUS)
+                        .message(DEFAULT_ERROR_MESSAGE)
                         .build())
                 .meta(toMetaWrapper(ERROR_CODE))
                 .build();

@@ -20,6 +20,6 @@ public class Handler {
                         .flatMap(status -> ServerResponse.ok()
                                 .bodyValue(StatusResponseMapper.buildResponseOK(status)))
                         .onErrorResume(error -> ServerResponse.status(500)
-                                .bodyValue(StatusResponseMapper.buildResponseError(error.getMessage())));
+                                .bodyValue(StatusResponseMapper.buildResponseError()));
     }
 }
