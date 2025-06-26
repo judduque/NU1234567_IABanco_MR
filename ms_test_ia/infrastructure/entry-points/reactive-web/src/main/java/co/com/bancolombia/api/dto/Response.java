@@ -11,7 +11,7 @@ import lombok.Setter;
 @Builder(toBuilder = true)
 public class Response {
 
-    private SystemStatusRS systemStatus;
+    private SystemStatusRS data;
 
     private  MetaWrapper meta;
     @Getter
@@ -29,7 +29,6 @@ public class Response {
     @Builder(toBuilder = true)
     public static class MetaWrapper {
         private String code;
-        private String message;
         private String requestDateTime;
     }
 }
