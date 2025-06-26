@@ -1,0 +1,36 @@
+server:
+  port: 8080
+  tomcat:
+    uri-encoding: UTF-8
+spring:
+  webflux:
+    base-path: "/ms-test-ia"
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+    messages:
+      encoding: UTF-8
+  application:
+    name: "JuanDuqueIA"
+  devtools:
+    add-properties: false
+  h2:
+    console:
+      enabled: true
+      path: "/h2"
+  profiles:
+    active: "${ENV:dev}"
+    include: null
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,prometheus"
+  endpoint:
+    health:
+      probes:
+        enabled: true
+cors:
+  allowed-origins: "http://localhost:4200,http://localhost:8080"
