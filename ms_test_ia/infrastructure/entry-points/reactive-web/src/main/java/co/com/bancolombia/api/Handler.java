@@ -1,5 +1,7 @@
 package co.com.bancolombia.api;
 
+import co.com.bancolombia.api.dto.Response;
+import co.com.bancolombia.api.dto.mapper.StatusResponseMapper;
 import co.com.bancolombia.usecase.checkstatus.CheckStatusUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -16,8 +18,10 @@ public class Handler {
     private final CheckStatusUseCase checkStatusUseCase;
 
     public Mono<ServerResponse> listenGETUseCase(ServerRequest serverRequest) {
-        return ServerResponse.ok()
-                .bodyValue(checkStatusUseCase.checkStatus());
+        return
+                Mono.fromCallable(checkStatusUseCase::checkStatus)
+                        .flatMap(status -> ServerResponse.ok()
+                                .bodyValue(StatusResponseMapper.buildResponse(status)));
 
     }
 
