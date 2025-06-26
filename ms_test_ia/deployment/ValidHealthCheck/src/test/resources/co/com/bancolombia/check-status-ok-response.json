@@ -1,0 +1,10 @@
+{
+  "data": {
+    "status": "UP",
+    "message": "The system is running"
+  },
+  "meta": {
+    "code": "200",
+    "requestDateTime": "2025-06-26 13:52:26"
+  }
+}
