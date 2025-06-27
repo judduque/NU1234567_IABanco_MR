@@ -1,0 +1,154 @@
+name: $(Build.SourceBranchName).$(date:yyyyMMdd)$(rev:.r)
+
+variables:
+  - name: 'Artifactory.Repository'
+    value: 'build-N1234567_Pockets'
+  - name: 'component'
+    value: 'ms_test_ia'
+
+resources:
+  - repo: self
+    clean: true
+
+trigger:
+  branches:
+    include:
+      - trunk
+      - feature/*
+  paths:
+    include:
+      - 'ms_test_ia/*'
+
+stages:
+  - stage: CI
+    jobs:
+      - job: build
+        displayName: 'Build'
+        pool:
+          name: Build
+          demands:
+            - java
+            - agent.os -equals linux
+            - PATH
+        steps:
+          - checkout: self
+            fetchDepth: 1
+            persistCredentials: True
+
+          - task: JavaToolInstaller@1
+            displayName: 'Use Java 21'
+            inputs:
+              versionSpec: 21
+              jdkArchitectureOption: x64
+              jdkSourceOption: PreInstalled
+
+          - task: SonarQubePrepare@7
+            displayName: 'Prepare analysis on SonarQube'
+            inputs:
+              SonarQube: SonarQube
+              scannerMode: Other
+              extraProperties: |
+                sonar.projectKey=$(Build.Repository.Name)_$(component)
+                sonar.projectName=$(Build.Repository.Name)_$(component)
+                
+                sonar.projectVersion=$(Build.BuildNumber)
+                sonar.pitest.reportPaths = $(System.DefaultWorkingDirectory)/build/reports/pitest/mutations.xml
+
+          - task: Gradle@4
+            displayName: 'Build and Test'
+            inputs:
+              workingDirectory: $(component)/
+              gradleWrapperFile: $(component)/gradlew
+              tasks: 'clean build jacocoMergedReport'
+              publishJUnitResults: true
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '$(JAVA_HOME_21_X64)'
+              testResultsFiles: '**/TEST-*.xml'
+              sonarQubeRunAnalysis: true
+              sqGradlePluginVersionChoice: 'build'
+
+          - task: DevopsExtensionsBancolombia.publish-html-report.publish-report-task.publish-report-html@0
+            displayName: 'Publish Mutation Report'
+            inputs:
+              htmlPath: '$(System.DefaultWorkingDirectory)/$(component)/build/reports/pitest/index.html'
+
+
+          - task: PublishCodeCoverageResults@2
+            displayName: 'Publish code coverage'
+            inputs:
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/$(component)/build/reports/jacocoMergedReport/jacocoMergedReport.xml'
+              reportDirectory: '$(System.DefaultWorkingDirectory)/$(component)/build/reports/jacocoMergedReport/html'
+
+          - task: Sonar-buildbreaker@8
+            displayName: 'Quality Gate'
+            inputs:
+              SonarQube: SonarQube
+
+          - task: CopyFiles@2
+            displayName: 'Copy JAR'
+            inputs:
+              SourceFolder: '$(System.DefaultWorkingDirectory)/$(component)/applications/app-service/build/libs'
+              Contents: '*.jar'
+              TargetFolder: '$(System.DefaultWorkingDirectory)/$(component)/appArtifact'
+
+          - task: CopyFiles@2
+            displayName: 'Copy Dockerfile'
+            inputs:
+              SourceFolder: '$(component)/deployment/app'
+              Contents: Dockerfile
+              TargetFolder: '$(System.DefaultWorkingDirectory)/$(component)/appArtifact'
+
+          - task: CopyFiles@2
+            displayName: 'Copy Deployment Files'
+            inputs:
+              SourceFolder: '$(component)/deployment/k8s'
+              Contents: '*'
+              TargetFolder: '$(System.DefaultWorkingDirectory)/$(component)/deploymentArtifact'
+
+          - task: CopyFiles@2
+            displayName: 'Copy Acceptance Test'
+            inputs:
+              SourceFolder: '$(component)/deployment/acceptanceTest'
+              Contents: '**'
+              TargetFolder: '$(System.DefaultWorkingDirectory)/$(component)/acptTestArtifact'
+
+          - task: ArchiveFiles@2
+            displayName: 'Compress files'
+            inputs:
+              rootFolderOrFile: '$(component)/deployment'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/$(component).zip'
+
+          - task: JFrog.jfrog-artifactory-vsts-extension.artifactory-generic-upload.ArtifactoryGenericUpload@2
+            displayName: 'Artifactory Generic Upload'
+            inputs:
+              artifactoryService: Artifactory
+              fileSpec: |
+                {
+                  "files": [
+                    {
+                      "pattern": "$(Build.ArtifactStagingDirectory)/$(component).zip",
+                      "target": "$(Artifactory.Repository)/$(Build.Repository.Name)/$(component)/$(Build.BuildNumber)/"
+                    }
+                  ]
+                }
+              collectBuildInfo: true
+              includeEnvVars: true
+              failNoOp: false
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Artifact: Artifact'
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/$(component)/appArtifact'
+              ArtifactName: Artifact
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Artifact: Configuration'
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/$(component)/deploymentArtifact'
+              ArtifactName: k8s
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Artifact: Acceptance Test'
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/$(component)/acptTestArtifact'
+              ArtifactName: acceptanceTest
