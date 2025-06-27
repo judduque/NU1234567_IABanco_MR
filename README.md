@@ -112,6 +112,15 @@ gradle bootrun
   
   ![image](https://github.com/user-attachments/assets/6fdb738d-4b8e-4f02-8929-775dfb243e26)
 
+### 2.4 Visualización swagger del microservicio
+El archivo swagger.yaml se encuentra ubicado en 
+
+![image](https://github.com/user-attachments/assets/e9a23f76-b6f1-4ac6-859b-3f0668c96b67)
+
+Su contenido se puede copiar para visualizar en 
+https://editor-next.swagger.io/ 
+
+
 
 
 
