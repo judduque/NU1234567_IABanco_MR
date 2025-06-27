@@ -1,0 +1,81 @@
+openapi: 3.0.3
+info:
+  title: Health Check
+  version: 1.0.0
+  description: APi para verificar el estado de salud del microservicio.
+servers:
+  - url: http://localhost:8080/ms-test-ia/
+
+  
+paths:
+  /api/checkStatus:
+    get:
+      tags:
+        - Health Check
+      summary: Permite verificar el estado de salud del microservicio.
+      operationId: Permite obtener el estado del microservicio.
+      responses:
+        '200':
+          description: Respuesta exitosa con el estado del microservicio.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOKStatus'
+        '502':
+          description: Respuesta con error al momento de obtener el estado del microservicio.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    ResponseOKStatus:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              description: Estado deL microservicio.
+              example: "UP"
+            message:
+              type: string
+              description: Mensaje de estado del microservicio.
+              example: "The system is running"    
+        meta:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Código de respuesta de la solicitud.
+              example: "200"
+            requestDateTime:
+              type: string
+              description: Fecha y hora de la solicitud.
+              example: "2023-10-01 12:00:00"
+    ErrorResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              description: Estado deL microservicio.
+              example: "ERROR"
+            message:
+              type: string
+              description: Mensaje de error que se generó.
+              example: "An error occurred while processing the request"    
+        meta:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Código de respuesta de la solicitud.
+              example: "500"
+            requestDateTime:
+              type: string
+              description: Fecha y hora de la solicitud.
+              example: "2023-10-01 12:00:00"
